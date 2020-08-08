@@ -15,6 +15,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Validator\Constraints as Assert;
 
 
 /**
@@ -24,7 +25,7 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
  *     "post"
  *     },
  *     itemOperations={
- *                  "get"={"path"="/propietario/{id}"},
+ *                  "get",
  *                  "put"
  *      },
  *     normalizationContext={"groups"={"propietario:read"}, "swagger_definition_name"= "Read"},
@@ -32,6 +33,7 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
  *     shortName="propietario",
  *     attributes={
  *          "pagination_items_per_page"=10,
+ *          "formats"={"jsonld", "json", "html", "jsonhal", "csv"={"text/csv"}}
  *     }
  * )
  * @ORM\Entity(repositoryClass=PropietarioRepository::class)
@@ -59,6 +61,9 @@ class Propietario
     /**
      * @ORM\Column(type="string", length=255)
      * @Groups({"propietario:read","propietario:write"})
+     * @Assert\NotBlank(
+     * message="La razon Social es obligatoria"
+     * )
      */
     private $razonSocial;
 
@@ -88,7 +93,7 @@ class Propietario
 
     /**
      * @ORM\Column(type="boolean")
-     *  @Groups({"propietario:read","propietario:write"})
+     * @Groups({"propietario:read","propietario:write"})
      */
     private $isActive;
 
@@ -101,6 +106,12 @@ class Propietario
     /**
      * @ORM\Column(type="integer")
      * @Groups({"propietario:read","propietario:write"})
+     * @Assert\NotBlank()
+     * @Assert\Length(
+     *     min="3",
+     *     max="4",
+     *     maxMessage="El codigo postal debe tener entre 3 y 4 digitos"
+     * )
      */
     private $codigoPostal;
 
