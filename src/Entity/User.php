@@ -50,7 +50,7 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=255 )
-     * @Groups({"user:read", "user:write", "uel:item:get  "})
+     * @Groups({"user:read", "user:write", "uel:item:get"})
      * @Assert\NotBlank()
       */
     private $username;

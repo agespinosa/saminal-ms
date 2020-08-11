@@ -12,6 +12,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\UelRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 
 /**
@@ -77,6 +78,7 @@ class Uel
      * @ORM\ManyToOne(targetEntity=User::class)
      * @ORM\JoinColumn(nullable=false)
      * @Groups({"uel:read","uel:write"})
+     * @Assert\Valid()
      */
     private $usuario;
 
