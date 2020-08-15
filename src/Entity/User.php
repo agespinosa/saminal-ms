@@ -49,7 +49,7 @@ class User implements UserInterface
     private $password;
 
     /**
-     * @ORM\Column(type="string", length=255 )
+     * @ORM\Column(type="string", length=255 )ser
      * @Groups({"user:read", "user:write", "uel:item:get"})
      * @Assert\NotBlank()
       */

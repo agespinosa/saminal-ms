@@ -4,15 +4,19 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Core\Serializer\Filter\PropertyFilter;
 
 use App\Repository\PropietarioRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -25,7 +29,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  *     "post"
  *     },
  *     itemOperations={
- *                  "get",
+ *                  "get"={
+ *                        "normalization_context"={"groups"={"propietario:read","propietario:item:get"}}
+ *                   },
  *                  "put"
  *      },
  *     normalizationContext={"groups"={"propietario:read"}, "swagger_definition_name"= "Read"},
@@ -38,9 +44,14 @@ use Symfony\Component\Validator\Constraints as Assert;
  * )
  * @ORM\Entity(repositoryClass=PropietarioRepository::class)
  * @ApiFilter(BooleanFilter::class, properties={"isActive"})
- * @ApiFilter(SearchFilter::class, properties={"cuit":"partial", "razonSocial"="partial"})
+ * @ApiFilter(SearchFilter::class,
+ *      properties={
+ *       "cuit":"partial",
+ *       "razonSocial"="partial",
+ *     })
  * @ApiFilter(RangeFilter::class, properties={"codigoPostal"})
  * @ApiFilter(PropertyFilter::class)
+ * @UniqueEntity(fields={"cuit"})
  */
 class Propietario
 {
@@ -115,11 +126,20 @@ class Propietario
      */
     private $codigoPostal;
 
+    /**
+     * @ORM\OneToMany(targetEntity=Establecimiento::class, mappedBy="propietario", cascade={"persist"})
+     * @Groups({"propietario:read","propietario:write"})
+     * @Assert\Valid()
+     * @ApiSubresource()
+     */
+    private $establecimientos;
+
 
 
     public function __construct(string $condicion= 'Propietaro')
     {
         $this->condicion = $condicion;
+        $this->establecimientos = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -276,6 +296,37 @@ class Propietario
             return $this->razonSocial;
         }
         return substr($this->razonSocial, 0, 40). '...';
+    }
+
+    /**
+     * @return Collection|Establecimiento[]
+     */
+    public function getEstablecimientos(): Collection
+    {
+        return $this->establecimientos;
+    }
+
+    public function addEstablecimiento(Establecimiento $establecimiento): self
+    {
+        if (!$this->establecimientos->contains($establecimiento)) {
+            $this->establecimientos[] = $establecimiento;
+            $establecimiento->setPropietario($this);
+        }
+
+        return $this;
+    }
+
+    public function removeEstablecimiento(Establecimiento $establecimiento): self
+    {
+        if ($this->establecimientos->contains($establecimiento)) {
+            $this->establecimientos->removeElement($establecimiento);
+            // set the owning side to null (unless already changed)
+            if ($establecimiento->getPropietario() === $this) {
+                $establecimiento->setPropietario(null);
+            }
+        }
+
+        return $this;
     }
 
 }

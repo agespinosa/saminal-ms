@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Core\Serializer\Filter\PropertyFilter;
@@ -12,8 +13,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Repository\UelRepository;
 
+use App\Repository\EstablecimientoRepository;
 
 /**
  * @ApiResource(
@@ -23,26 +24,32 @@ use App\Repository\UelRepository;
  *     },
  *     itemOperations={
  *         "get"={
- *             "normalization_context"={"groups"={"uel:read","uel:item:get"}}
+ *             "normalization_context"={"groups"={"establecimiento:read","establecimiento:item:get"}}
  *         },
  *         "put",
  *     },
- *     normalizationContext={"groups"={"uel:read"}, "swagger_definition_name"= "Read"},
- *     denormalizationContext={"groups"={"uel:write"}, "swagger_definition_name"= "Write"},
- *     shortName="uel",
+ *     normalizationContext={"groups"={"establecimiento:read"}, "swagger_definition_name"= "Read"},
+ *     denormalizationContext={"groups"={"establecimiento:write"}, "swagger_definition_name"= "Write"},
+ *     shortName="establecimiento",
  *     attributes={
  *          "pagination_items_per_page"=10,
  *          "formats"={"jsonld", "json", "html", "jsonhal", "csv"={"text/csv"}}
  *     }
  * )
- * @ORM\Entity(repositoryClass=UelRepository::class)
+ * @ORM\Entity(repositoryClass=EstablecimientoRepository::class)
  * @ApiFilter(BooleanFilter::class, properties={"isActive"})
- * @ApiFilter(SearchFilter::class, properties={"nombre":"partial", "direccion"="partial"})
+ * @ApiFilter(SearchFilter::class,
+ *     properties={
+ *     "nombre":"partial",
+ *     "propietario"="exact",
+ *     "propietario.razonSocial"="partial"
+ *      })
  * @ApiFilter(PropertyFilter::class)
  */
-class Uel
+class Establecimiento
 {
     use TimestampableEntity;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -52,35 +59,32 @@ class Uel
 
     /**
      * @ORM\Column(type="string", length=255)
-     * @Groups({"uel:read","uel:write"})
+     * @Groups({"establecimiento:read","establecimiento:write","propietario:read", "propietario:write","propietario:item:get"})
+     * @Assert\NotBlank(
+     *     message="El nombre del establecimiento es requerido"
+     * )
      */
     private $nombre;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"uel:read","uel:write"})
+     * @ORM\Column(type="integer")
+     * @Groups({"establecimiento:read","establecimiento:write", "propietario:read", "propietario:write"})
      */
-    private $direccion;
+    private $cantidadHectareas;
 
     /**
-     * @ORM\Column(type="string", length=50, nullable=true)
-     * @Groups({"uel:read","uel:write"})
+     * @ORM\ManyToOne(targetEntity=Propietario::class, inversedBy="establecimientos")
+     * @ORM\JoinColumn(nullable=true)
+     * @Groups({"establecimiento:read","establecimiento:write"})
+     * @ApiSubresource()
      */
-    private $telefono;
+    private $propietario;
 
     /**
      * @ORM\Column(type="boolean")
-     * @Groups({"uel:read","uel:write"})
+     * @Groups({"establecimiento:read","establecimiento:write","propietario:read", "propietario:write"})
      */
     private $isActive;
-
-    /**
-     * @ORM\ManyToOne(targetEntity=User::class)
-     * @ORM\JoinColumn(nullable=false)
-     * @Groups({"uel:read","uel:write"})
-     * @Assert\Valid()
-     */
-    private $usuario;
 
     public function getId(): ?int
     {
@@ -99,26 +103,26 @@ class Uel
         return $this;
     }
 
-    public function getDireccion(): ?string
+    public function getCantidadHectareas(): ?int
     {
-        return $this->direccion;
+        return $this->cantidadHectareas;
     }
 
-    public function setDireccion(?string $direccion): self
+    public function setCantidadHectareas(int $cantidadHectareas): self
     {
-        $this->direccion = $direccion;
+        $this->cantidadHectareas = $cantidadHectareas;
 
         return $this;
     }
 
-    public function getTelefono(): ?string
+    public function getPropietario(): ?Propietario
     {
-        return $this->telefono;
+        return $this->propietario;
     }
 
-    public function setTelefono(?string $telefono): self
+    public function setPropietario(?Propietario $propietario): self
     {
-        $this->telefono = $telefono;
+        $this->propietario = $propietario;
 
         return $this;
     }
@@ -131,18 +135,6 @@ class Uel
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
-
-        return $this;
-    }
-
-    public function getUsuario(): ?User
-    {
-        return $this->usuario;
-    }
-
-    public function setUsuario(?User $usuario): self
-    {
-        $this->usuario = $usuario;
 
         return $this;
     }
